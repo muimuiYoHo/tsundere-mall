@@ -15,6 +15,7 @@ const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
 (async () => {
     try {
         console.log("让本喵看看远程 main 分支有没有更新☆...");
+        console.log("对了喵,如果主人是 SSH 记得等下输入密码/私钥口令啊喵（＾∀＾●）ﾉｼ");
         execSync(`git fetch origin`, { stdio: 'inherit' });
         const localMain = execSync(`git rev-parse main`).toString().trim();
         const remoteMain = execSync(`git rev-parse origin/main`).toString().trim();
