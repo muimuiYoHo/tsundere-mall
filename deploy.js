@@ -3,6 +3,7 @@ import prompts from "prompts";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import simpleGit from "simple-git";
 
 const distDir = path.resolve("dist");
 const tmpDir = path.join(os.tmpdir(), "gh-pages-temp");
@@ -12,7 +13,7 @@ const args = process.argv.slice(2);
 const ghMsgArg = args.find(arg => arg.startsWith('--gh-msg='));
 const ghMsg = ghMsgArg ? ghMsgArg.split('=')[1] : '部署 dist 更新';
 const mainMsgArg = args.find(arg => arg.startsWith('--main='));
-const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
+const mainMsgParam = args.find(arg => arg.startsWith('--main=')[1]) : null;
 
 (async () => {
     try {
@@ -75,18 +76,20 @@ const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
         if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true, force: true });
         fs.mkdirSync(tmpDir);
 
-        // 初始化 gh-pages 分支
-        execSync(`git init`, { cwd: tmpDir });
-        execSync(`git checkout -b gh-pages`, { cwd: tmpDir });
-
         // 拷贝 dist 内容到临时目录
         execSync(`xcopy "${distDir}" "${tmpDir}" /E /I /Y`, { shell: true });
 
-        // 提交并推送
-        execSync(`git add .`, { cwd: tmpDir });
-        execSync(`git commit -m "${ghMsg}"`, { cwd: tmpDir });
-        execSync(`git remote add origin "$(git config --get remote.origin.url)"`, { cwd: tmpDir });
-        execSync(`git push -f origin gh-pages`, { cwd: tmpDir, stdio: 'inherit' });
+        // --- 使用 simple-git 异步 push ---
+        const git = simpleGit(tmpDir);
+        await git.init();
+        await git.checkoutLocalBranch("gh-pages");
+        await git.add(".");
+        await git.commit(ghMsg);
+
+        // 获取远程 URL
+        const originUrl = execSync("git config --get remote.origin.url").toString().trim();
+        await git.addRemote("origin", originUrl);
+        await git.push(["-f", "origin", "gh-pages"]);
 
         console.log("部署完成喵!本喵厉害吧喵(/≧▽≦)/");
 
@@ -98,6 +101,7 @@ const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
         process.exit(1);
     }
 })();
+
 
 
 
