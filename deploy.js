@@ -13,7 +13,8 @@ const args = process.argv.slice(2);
 const ghMsgArg = args.find(arg => arg.startsWith('--gh-msg='));
 const ghMsg = ghMsgArg ? ghMsgArg.split('=')[1] : '部署 dist 更新';
 const mainMsgArg = args.find(arg => arg.startsWith('--main='));
-const mainMsgParam = args.find(arg => arg.startsWith('--main=')[1]) : null;
+const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
+
 
 (async () => {
     try {
