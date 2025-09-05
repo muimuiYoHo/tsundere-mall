@@ -1,4 +1,3 @@
-// #!/usr/bin/env node
 // import simpleGit from "simple-git";
 // import inquirer from "inquirer";
 // import { execSync } from "child_process";
@@ -91,7 +90,6 @@
 //   console.error("部署失败了喵(#_<-), 主人看这个知道怎么回事吗喵", err);
 //   process.exit(1);
 // });
-
 import simpleGit from "simple-git";
 import inquirer from "inquirer";
 import { execSync } from "child_process";
@@ -104,85 +102,83 @@ const indexPath = path.join(distDir, "index.html");
 const versionPath = path.join(distDir, "version.txt");
 
 async function run() {
-    console.log("让本喵看看远程 main 分支有没有更新☆...");
+    console.log("🔍 检查远程 main 分支是否有更新...");
     await git.fetch("origin", "main");
     const status = await git.status();
-
     if (status.behind > 0) {
-        console.error("本地 main 落后远程，请先拉取更新喵(>_<)");
+        console.error("❌ 本地 main 落后远程，请先拉取更新！");
         process.exit(1);
     }
 
-    // main commit
     const ans = await inquirer.prompt({
         type: "input",
         name: "msg",
-        message: "√ 告诉本喵 main 分支的描述吧（￣︶￣）↗",
+        message: "请输入 main 分支的 commit 描述：",
         default: "更新 main 分支",
     });
     const mainCommitMsg = ans.msg;
 
-    console.log("本喵要 push main 分支了哟...");
+    console.log("📤 推送 main 分支...");
     await git.add(".");
     await git.commit(mainCommitMsg);
     await git.push("origin", "main");
-    console.log("main 分支已经推送了喵(≧∇≦)ﾉ");
+    console.log("✅ main 分支已推送");
 
-    // 清空 dist
-    console.log("已经帮主人清空 dist 目录了喵");
+    console.log("🧹 清空 dist 目录并重新构建...");
     fs.emptyDirSync(distDir);
-
-    // 构建 vite
     execSync("npm run build", { stdio: "inherit" });
 
-    // 生成版本号
     const version = `v-${Date.now()}`;
-    console.log(`这次的 dist 版本号是 ${version} 喵(｡◕ ‿◕｡)`);
+    console.log(`🏷 本次 dist 版本号：${version}`);
 
-    // 更新 index.html 中的 js/css URL
+    // 自动给 index.html 的 js/css 添加版本号，防止缓存
     if (fs.existsSync(indexPath)) {
         let html = fs.readFileSync(indexPath, "utf-8");
         html = html.replace(/(<script\s+.*src=".*?\.js)"/g, `$1?v=${version}"`);
         html = html.replace(/(<link\s+.*href=".*?\.css)"/g, `$1?v=${version}"`);
         fs.writeFileSync(indexPath, html, "utf-8");
-        console.log("index.html 已更新 js/css URL，防止缓存喵~");
+        console.log("📝 index.html 已更新 js/css URL");
     }
 
-    // 写入 version.txt
-    const log = `${new Date().toISOString()} 版本号: ${version} 由 main 分支提交: "${mainCommitMsg}" 上传\n`;
+    // 记录 version.txt
+    const log = `${new Date().toISOString()} 版本号: ${version} 由 main 分支提交: "${mainCommitMsg}"\n`;
     fs.appendFileSync(versionPath, log, "utf-8");
-    console.log(`version.txt 已生成并记录本次上传日志喵`);
+    console.log("📄 version.txt 已记录本次部署日志");
 
-    // gh-pages 部署
+    // 部署到 gh-pages
     const ghCommitMsg = `部署 dist 更新 ${version}`;
-    console.log(`本喵要部署 dist 到 gh-pages 分支了喵，commit 描述: "${ghCommitMsg}"`);
+    console.log(`🚀 部署 dist 到 gh-pages，commit: "${ghCommitMsg}"`);
 
     const tempBranch = "gh-pages-temp";
-
-    // 删除已有临时分支
-    try {
-        await git.deleteLocalBranch(tempBranch, true);
-        console.log(`临时分支 ${tempBranch} 已存在，本喵先删除它喵~`);
-    } catch {}
-
+    try { await git.deleteLocalBranch(tempBranch, true); } catch {}
     await git.checkoutLocalBranch(tempBranch);
-    await git.raw(["add", "-f", "dist"]);
+
+    // 清空临时分支内容（保留 .git）
+    fs.readdirSync(process.cwd()).forEach(file => {
+        if (file !== ".git") fs.rmSync(file, { recursive: true, force: true });
+    });
+
+    // 拷贝 dist 内容到根目录
+    fs.copySync(distDir, process.cwd());
+
+    await git.add(".");
     await git.commit(ghCommitMsg);
     await git.push("origin", `${tempBranch}:gh-pages`, ["--force"]);
+
+    // 切回 main 并删除临时分支
     await git.checkout("main");
     await git.deleteLocalBranch(tempBranch, true);
 
-    console.log("部署完成喵! 本喵厉害吧喵(/≧▽≦)/");
+    console.log("🎉 部署完成！gh-pages 已更新为最新 dist 内容");
 }
 
 run().catch((err) => {
-    console.error("部署失败了喵(#_<-), 主人看这个知道怎么回事吗喵", err);
+    console.error("❌ 部署失败:", err);
     if (fs.existsSync(distDir)) {
-        console.log(`部署失败了喵，本喵保留 dist 在 ${distDir} 了喵o(TヘTo)`);
+        console.log(`⚠ dist 文件保留在 ${distDir}`);
     }
     process.exit(1);
 });
 
-
-// //使用方法
-// // npm run deploy
+//使用方法
+// npm run deploy
