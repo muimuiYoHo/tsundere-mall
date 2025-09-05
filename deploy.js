@@ -2,6 +2,7 @@ import { execSync } from "child_process";
 import prompts from "prompts";
 import fs from "fs";
 import path from "path";
+import ghpages from "gh-pages";
 
 const distDir = path.resolve("dist");
 
@@ -29,20 +30,19 @@ const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
         // --- 检查是否有改动 ---
         const status = execSync(`git status --porcelain`).toString().trim();
         if (status) {
-            // 有改动获取 main commit 描述
             const mainMsg = mainMsgParam || (await prompts({
-            type: 'text',
-            name: 'msg',
-            message: '告诉本喵 main 分支的描述吧（￣︶￣）↗ ',
-        })).msg;
-        if (!mainMsg) {
-            console.log("取消操作...喵?没有输入 main commit 描述是不打算继续了喵(ﾟヮﾟ)?");
-            process.exit(1);
-        }
-        execSync(`git add .`, { stdio: 'inherit' });
-        execSync(`git commit -m "${mainMsg}"`, { stdio: 'inherit' });
-        console.log("本喵要 push main 分支了哟，如果主人是 SSH 记得等下输入密码/私钥口令啊喵（＾∀＾●）ﾉｼ...");
-        execSync(`git push origin main`, { stdio: 'inherit' });
+                type: 'text',
+                name: 'msg',
+                message: '告诉本喵 main 分支的描述吧（￣︶￣）↗ ',
+            })).msg;
+            if (!mainMsg) {
+                console.log("取消操作...喵?没有输入 main commit 描述是不打算继续了喵(ﾟヮﾟ)?");
+                process.exit(1);
+            }
+            execSync(`git add .`, { stdio: 'inherit' });
+            execSync(`git commit -m "${mainMsg}"`, { stdio: 'inherit' });
+            console.log("本喵要 push main 分支了哟，如果主人是 SSH 记得等下输入密码/私钥口令啊喵（＾∀＾●）ﾉｼ...");
+            execSync(`git push origin main`, { stdio: 'inherit' });
         } else {
             console.log("main 分支没有改动喵，跳过提交了喵§(*￣▽￣*)§");
         }
@@ -63,9 +63,18 @@ const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
         const version = `v-${Date.now()}`;
         fs.writeFileSync(path.join(distDir, 'version.txt'), version);
         console.log(`这次的 dist 版本号是 ${version} 喵(｡◕ ‿◕｡)`);
-        // --- 上传 dist 到 gh-pages ---
+        // --- 上传 dist 到 gh-pages 使用 Node API ---
         console.log(`本喵要部署 dist 到 gh-pages 分支了喵，主人的 commit 描述是 "${ghMsg}" 喵`);
-        execSync(`gh-pages -d dist -m "${ghMsg}"`, { stdio: 'inherit' });
+        await new Promise((resolve, reject) => {
+            ghpages.publish(distDir, {
+                branch: 'gh-pages',
+                message: ghMsg,
+                dotfiles: true
+            }, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
         console.log("部署完成喵!本喵厉害吧喵(/≧▽≦)/");
     } catch (err) {
         console.error("部署失败了喵(#_<-),主人看这个知道怎么个事吗喵", err);
@@ -75,6 +84,7 @@ const mainMsgParam = mainMsgArg ? mainMsgArg.split('=')[1] : null;
         process.exit(1);
     }
 })();
+
 
 //使用方法
 // npm run deploy -- --main="自定义描述" --gh-msg="自定义描述"
