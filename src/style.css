@@ -1,0 +1,97 @@
+@import "tailwindcss";
+@plugin "daisyui";
+* {
+    margin: 0;
+}
+ul,li,div,a {  
+    list-style: none;  
+    line-height: normal;
+    text-decoration: none;
+}
+div {
+    padding: 0;
+}
+html, body, #app {
+  min-height: 100%;
+  margin: 0;
+  background-color: #f7fcfe !important;
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  display: flex;
+  /* place-items: center; */
+  min-width: 320px;
+  height: auto;
+  min-height: 100vh;
+  margin: 0;
+  place-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+.导航栏相关 {
+  position: absolute;
+  width: 100vw;
+  min-width: 1200px;
+  /* min-height: 200px; */
+  left: 0;
+  top: 0;
+  z-index: 3;
+  /* opacity: .5; */
+}
+.页面相关 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+    position: absolute;
+    min-width: 1200px;
+    min-height: 450px;
+    top: 17.8vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+}
